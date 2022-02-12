@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ComposeApplication</string>
+    <string name="title_activity_view_demo">ViewDemoActivity</string>
+</resources>
