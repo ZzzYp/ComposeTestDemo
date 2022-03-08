@@ -12,13 +12,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ComposeApplication">
         <activity
+            android:name=".ViewDemoActivity"
+            android:exported="false"
+            android:label="@string/title_activity_view_demo"
+            android:theme="@style/Theme.ComposeApplication.NoActionBar" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="false"
             android:label="@string/title_activity_view_demo"
             android:theme="@style/Theme.ComposeApplication.NoActionBar" />
 
         <activity
-            android:name=".ViewDemoActivity"
+            android:name=".ModifierDemoActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.ComposeApplication.NoActionBar">
