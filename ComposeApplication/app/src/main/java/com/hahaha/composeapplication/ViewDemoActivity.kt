@@ -41,7 +41,7 @@ import com.hahaha.composeapplication.ui.theme.ComposeApplicationTheme
  */
 
 class ViewDemoActivity : ComponentActivity() {
-    @ExperimentalPagerApi
+    @OptIn(ExperimentalPagerApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
