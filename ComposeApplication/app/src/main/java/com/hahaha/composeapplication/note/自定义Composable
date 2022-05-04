@@ -1,0 +1,17 @@
+1，为什么控件上要加@Composable注解
+   因为我们在Compose中调用的控件，会在编译过程中加一些其他参数？，(其中一个参数叫Composer(interface Composer {}),
+   详细点就是通过Compose的编译器插件为控件添加一些其他参数，然后在运行过程中加载的控件都是这些添加了参数以后的控件
+2，编译器插件(Compiler Plugin)
+   通过@Composable注解作为识别符，识别需要被修改的函数。
+   internal fun invokeComposable(composer: Composer, composable: @Composable () -> Unit) {
+       @Suppress("UNCHECKED_CAST")
+       // 将一个composable函数型参数强转为了一个Function2<Composer, Int, Unit>，就不需要加@Composable注解了
+       val realFn = composable as Function2<Composer, Int, Unit>
+       realFn(composer, 1)
+   }
+3，为什么要为控件添加这些参数呢？？？？？
+
+
+4，自定义Composable，就是控件拆出来到自定义的函数里面，需要加@Composable注解
+
+5，remember函数

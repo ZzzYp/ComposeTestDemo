@@ -1,0 +1,9 @@
+无状态：Stateless，Compose中没有类似TextView的文字内容这种状态属性，无状态是一种特点而不是功能。
+      可以无状态，但不是绝对无状态
+状态：各种控件属性，比如TextView的文字内容
+
+状态提升：State Hoisting 例如把文字状态从内部提升到外部
+
+数据：
+
+单向数据流：Unidirectional Data Flow，数据由上向下传递，事件由下向上传递

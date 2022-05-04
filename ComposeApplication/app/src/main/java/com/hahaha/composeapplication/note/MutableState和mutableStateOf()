@@ -1,0 +1,122 @@
+MutableState
+1：是个接口
+@Stable
+interface MutableState<T> : State<T> {
+override var value: T
+operator fun component1(): T
+operator fun component2(): (T) -> Unit
+}
+
+mutableStateOf()
+1，实现了MutableState的类，可以声明出一个MutableState类型的对象，它的值value可以被订阅，然后通过setValue
+改变value的时候，订阅方可以感知并自动更新value
+2，源码
+
+通过createSnapshotMutable创建出一个对象
+fun <T> mutableStateOf(
+value: T,
+policy: SnapshotMutationPolicy<T> = structuralEqualityPolicy()
+): MutableState<T> = createSnapshotMutableState(value, policy)
+
+->
+
+返回了一个ParcelableSnapshotMutableState对象
+internal actual fun <T> createSnapshotMutableState(
+value: T,
+policy: SnapshotMutationPolicy<T>
+): SnapshotMutableState<T> = ParcelableSnapshotMutableState(value, policy)
+
+-> 
+
+继承了父类，主要实现在父类中，子类中主要是实现了Parcelable，可序列化
+@SuppressLint("BanParcelableUsage")
+internal class ParcelableSnapshotMutableState<T>(
+value: T,
+policy: SnapshotMutationPolicy<T>
+) : SnapshotMutableStateImpl<T>(value, policy), Parcelable {
+...
+}
+
+父类中对value进行了get和set实现，来改变value的值
+实现了SnapshotMutableState接口，这个接口继承了MutableState，但是MutableState是不能被订阅的
+实现了StateObject接口，这个接口是可以被订阅的
+
+get()方法中，next其实是拿到了一个firstStateRecord，即链表中的头节点，然后调用了readable，
+而readable中有个readObserver是用来记录MutableState对象被使用了，即我们定义的MutableState对象进行了取值get()操作
+这个记录相当于订阅行为，而每次通过set(value)去写值的时候，都会去遍历之前的记录，看看是哪些地方读过了这个对象，然后将这些地方？置为失效，然后在下一帧，就会刷新这些失效的地方
+记录完成以后，会继续调一个三参数的readable去取值，即遍历StateRecord的链表，去找到一个可用的并且最新的StateRecord
+所以get()方法其实是遍历StateRecord的链表，找到一个可用的并且最新的StateRecord，顺便记录一下当前的MutableState()被使用过了
+
+set(value): 里面有个snapshot.writeObserver 遍历之前的记录，看看是哪些地方读过了这个对象，然后将这些地方？置为失效
+Snapshot：整个状态，可以对应多个StateRecord，一个StateRecord对应一个Snapshot
+          系统有多个Snapshot的时候，他们是有先后关系的
+          同一个StateObject 的每个 StateRecord，都有它们对应的Snapshot的id，
+          StateRecord 和 Snapshot 就算不直接对应，只要StateRecord的Snapshot对另一个是有效的，另一个就能取到这个StateRecord
+
+internal open class SnapshotMutableStateImpl<T>(
+value: T,
+override val policy: SnapshotMutationPolicy<T>) : StateObject, SnapshotMutableState<T> {
+@Suppress("UNCHECKED_CAST")
+override var value: T
+    get() = next.readable(this).value
+    set(value) = next.withCurrent {
+        if (!policy.equivalent(it.value, value)) {
+             next.overwritable(this, it) { this.value = value }
+        }
+    }
+
+SnapshotMutableState接口继承了MutableState，
+但是MutableState不能被订阅，可以被订阅的是上面的StateObject
+interface SnapshotMutableState<T> : MutableState<T> {
+val policy: SnapshotMutationPolicy<T>
+}
+
+StateObject是实现可订阅的关键，
+关键是firstStateRecord，而firstStateRecord是StateRecord类型
+将订阅的目标对象放进了一个StateRecord中
+由于StateRecord是存放到链表中，所以拿到了firstStateRecord即头节点，就可以拿到链表中的其他节点的StateRecord
+interface StateObject {
+    val firstStateRecord: StateRecord
+    fun prependStateRecord(value: StateRecord)
+    fun mergeRecords(
+        previous: StateRecord,
+        current: StateRecord,
+        applied: StateRecord
+    ): StateRecord? = null
+}
+
+上面的next是一个StateStateRecord对象
+private var next: StateStateRecord<T> = StateStateRecord(value)
+
+继承了StateRecord抽象类，是一个StateRecord类型
+private class StateStateRecord<T>(myValue: T) : StateRecord() {
+   override fun assign(value: StateRecord) {
+       @Suppress("UNCHECKED_CAST")
+          this.value = (value as StateStateRecord<T>).value
+       }
+
+   override fun create(): StateRecord = StateStateRecord(value)
+
+   var value: T = myValue
+}
+
+// 
+abstract class StateRecord {
+    internal var snapshotId: Int = currentSnapshot().id
+    internal var next: StateRecord? = null
+    abstract fun assign(value: StateRecord)
+    abstract fun create(): StateRecord
+}
+
+// MutableState 支持订阅是因为 StateObject， 而StateObject支持订阅是因为将目标值存入了StateRecord
+// 而为什么要将目标值存入StateRecord呢，是因为要在StateRecord中存多份值
+// 而为什么StateRecord中要存多份值，是因为Compose 支持事务功能，比如撤回功能，合并功能，批量更新功能，所以需要多份值来实现
+// Compose是用链表数据结构来存放多份值的，即存放多个StateRecord
+MutableState -> StateObject -> StateRecord -> Compose 支持事务功能
+
+
+两个订阅过程
+1，对Snapshot 中读写 StateObject 对象的订阅，分别订阅读和写，所以有两个接受者 readObserver和writeObserver
+发生时间：订阅在Snapshot创建的时候，通知发生在读和写的时候
+2，对每一个StateObject 的应用行为做订阅
+发生时间：订阅：第一个订阅的readObserver被调用(通知)的时候， 通知：StateObject 新值被应用的时候
