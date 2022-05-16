@@ -54,6 +54,15 @@
             android:theme="@style/Theme.ComposeApplication.NoActionBar" />
         <activity
             android:name=".ComposePerformanceDangerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ComposeApplication.NoActionBar" />
+        <activity
+            android:name=".ReComposeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ComposeApplication.NoActionBar" />
+
+        <activity
+            android:name=".DerivedStateOfAndRememberActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.ComposeApplication.NoActionBar">

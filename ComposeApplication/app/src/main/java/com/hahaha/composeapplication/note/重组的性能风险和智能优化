@@ -1,0 +1,16 @@
+-----> ReComposeActivity
+
+Recompose 【重组】的执行过程
+Recompose Scope 重组范围
+
+Compose：自动更新 会导致更新范围过大，超过了需求，所以在编译过程会插入一些代码判断来跳过没必要的更新
+
+Compose判断代码片段是否相等，参数是否改变，是通过Kotlin中的Structual Equality 结构性相等 即kotlin的==来实现的
+
+
+@Stable稳定要遵循一下三条规则 -> 
+         - 现在相等的就永远相等
+         - 当公开属性(public修饰的属性)改变的时候，通知到用到这个属性的Composition
+         - 公开属性需要全部是稳定/可靠属性
+基本类型和String 本来就是稳定类型
+

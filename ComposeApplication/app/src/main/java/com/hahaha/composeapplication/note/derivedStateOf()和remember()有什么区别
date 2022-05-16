@@ -1,0 +1,16 @@
+derivedStateOf ：
+/---------
+1，使用derivedStateOf包裹的代码块中有todoTasks和highPriorityKeywords两个变量
+当这两个变量发生改变时，derivedStateOf包裹的代码块中的代码会重新执行，而todoTasks是一个MutableState类型的变量，
+所以Compose会自动订阅todoTasks，当todoTasks发生改变时，将todoTasks所在的代码块标记为失效，
+然后等下一帧来以后重新执行失效代码块即compose过程，更新Ui
+2，remember(highPriorityKeywords)这样写是因为，当highPriorityKeywords是一个新对象的时候，重新执行remember内部的代码
+val todoTasks = remember { mutableStateListOf<String>() }
+val highPriorityTasks by remember(highPriorityKeywords) {
+derivedStateOf { todoTasks.filter { it.containsWord(highPriorityKeywords) } }
+}
+3，derivedStateOf订阅的是MutableState的状态对象
+/---------
+
+带参数的remember()的作用：在recompose的时候，监听对象是否发生了改变
+derivedStateOf的作用：监听对象内部的状态是否发生了改变
