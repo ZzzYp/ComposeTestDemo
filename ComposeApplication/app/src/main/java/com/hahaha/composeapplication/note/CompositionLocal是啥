@@ -1,0 +1,5 @@
+CompositionLocal 是状态，又不完全是
+
+CompositionLocal 直译是Composition的局部变量,是具有穿透函数功能的局部变量,即不需要显式传递的函数参数
+适用于上下文类型的数据或者环境类型的数据，比如主题
+
